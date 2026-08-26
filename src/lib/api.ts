@@ -37,7 +37,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://campers-api.goit.stu
 
 export const api = axios.create({
   baseURL: API_URL,
-  headers: { "Content-Type": "application/json" },
+  headers: { Accept: "application/json" },
 });
 
 export type CamperFilters = {
@@ -49,25 +49,29 @@ export type CamperFilters = {
   limit?: number;
 };
 
-export async function getCampers(filters: CamperFilters = {}) {
+export async function getCampers(filters: CamperFilters = {}): Promise<CamperList> {
   const params = Object.fromEntries(
     Object.entries({ ...filters, limit: filters.limit ?? 4 }).filter(
       ([, value]) => value !== undefined && value !== "",
     ),
   );
 
-  const { data } = await api.get<CamperList>("/campers", { params });
-  return data;
+  const { data } = await api.get("/campers", { params });
+
+  // The API can return its collection either directly or wrapped in `data`.
+  // Normalize it here so the UI always receives { items, total }.
+  const payload = data?.data ?? data;
+  const items = Array.isArray(payload) ? payload : payload?.items ?? [];
+  const total = Array.isArray(payload) ? items.length : Number(payload?.total ?? items.length);
+
+  return { items, total };
 }
 
-export async function getCamper(id: string) {
+export async function getCamper(id: string): Promise<Camper> {
   const { data } = await api.get<Camper>(`/campers/${encodeURIComponent(id)}`);
-  return data;
+  return data?.data ?? data;
 }
 
-// The provided campers API is read-only for the booking flow used in this task.
-// Keep the booking request isolated so it can be replaced with the exact booking
-// endpoint when it is exposed by the backend contract.
 export type BookingPayload = {
   camperId: string;
   name: string;
