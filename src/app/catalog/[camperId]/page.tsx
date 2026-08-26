@@ -1,14 +1,14 @@
 "use client";
+import { use, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useState } from "react";
 import { toast } from "react-hot-toast";
 import { getCamper, bookCamper } from "@/lib/api";
 import type { BookingPayload } from "@/lib/api";
 
 export default function CamperDetails({ params }: { params: Promise<{ camperId: string }> }) {
-  const [id,setId]=useState<string>(""); const [name,setName]=useState(""); const [email,setEmail]=useState(""); const [date,setDate]=useState(""); const [comment,setComment]=useState("");
-  useState(()=>{void params.then(p=>setId(p.camperId));});
-  const query=useQuery({queryKey:["camper",id],queryFn:()=>getCamper(id),enabled:!!id});
+  const { camperId } = use(params);
+  const [name,setName]=useState(""); const [email,setEmail]=useState(""); const [date,setDate]=useState(""); const [comment,setComment]=useState("");
+  const query=useQuery({queryKey:["camper",camperId],queryFn:()=>getCamper(camperId)});
   const booking=useMutation({mutationFn:(payload:BookingPayload)=>bookCamper(payload),onSuccess:()=>{toast.success("Booking submitted successfully!");setName("");setEmail("");setDate("");setComment("");},onError:()=>toast.error("Could not submit booking.")});
   if(query.isLoading) return <main className="page"><div className="container spinner">Loading camper…</div></main>;
   if(query.isError||!query.data) return <main className="page"><div className="container error">Camper not found.</div></main>;
